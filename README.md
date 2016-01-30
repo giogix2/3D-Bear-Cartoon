@@ -68,7 +68,19 @@ For the structural tube it has been used the material called “alluminium_galva
 
 **objLoader (Class used to import .obj files)**
 
-The models created in Blender were exported in .obj format (and .mtl format for the materials). OpenGL doesn’t have any functions to directly import this kind of files, and not many library are available to do that. So to import this files I’ve found a code online and I’ve modified to make it work. The code is well explained in a youtube’s video, present in the following link [link1](https://www.youtube.com/watch?v=XIVUxywOyjE) . In the bottom of the video there are also 3 links to the final code
+The models created in Blender were exported in .obj format (and .mtl format for the materials). OpenGL doesn’t have any functions to directly import this kind of files, and not many library are available to do that. So to import this files I’ve found a code online and I’ve modified to make it work. The code is well explained in a youtube’s video, present in the following link [Youtube Video](https://www.youtube.com/watch?v=XIVUxywOyjE) . In the bottom of the video there are also 3 links to the final code:
+* http://pastebin.com/qPMQcUbG
+* http://pastebin.com/Tj8vaDuN
+* http://pastebin.com/cpwGP4WJ
+The code permits to import the .obj file and automatically import all the material attached to the right objects. I’ve modified the code in a way in which the function import the .obj file and return a vector of triangles object (the Triangle classes were explained in the previous homework). Basically is necessary to create an objloader object, and then to call the function loadShapeToVector(), specifying the path of the .obj file. To save the vectors, containing the triangles which compose the 2 tubes, the chair lift and the roof, I’ve created 4 different global vectors, called cylinder1, cylinder2, chairlift and Roof. In the initRendering() function I call create the 4 3D shapes, which are usable in any part of the code, since those are global.
+Basically the parser (objloader), cycles all the lines of the .obj file, and:
+* If the line begins with # it skip the lines
+* If the line begins with v it save the following values in an internal vector (called vertex)
+* If the line begins with vn it save the normal a vector (called normals)
+* If the line begins with f it save the following values in a vector (called faces)
+* If the line begins with mtl It saves the name of the .mtl file, which contains the information about the materials, so later it can open it and extract the content automatically
+* If the line begins with use it save the name of the material used and save it in a vector (called materials). Later it will be possible to know, for each face, which material is attached to it.
+The code is really well explained in the video linked above (through 7 different videos). Another particularity of this code, consists in the use of the SDL library, which has to be imported to make it work.
 
 **Implementation**
 
@@ -96,4 +108,55 @@ The objloader class uses the SDL.h file as dependency. The obj files have to be 
 * Water.h
 * objloader.h
 * SDL
+
+The main program needs also the library Shapes.h which I’ve created, containing the definitions of the shapes created.
+The program needs also the file objloader.h and objloader.cpp, present both in the project. The library objloader needs also the library SDL.
+Basically, to be compiled, this code needs glut, glew and glm, which I couldn’t put in the zip file, because of a problem of dimension. So these libraries are expected to be imported.
+This project uses also the library SDL. This library is present in the zip file. The following guide explain a possible way to make import it.
+
+**Import glew and SDL using environment variables of Visual Studio**
+
+To make the Visual Studio Project usable in all the computers I’ve set the library using the environment variables. In particular, in the field **include directories**, in the project properties (as shown in figure 4), I put the following:
+* **$(ProjectDir)\glm;$(ProjectDir)\SDL\include;**
+![Alt text](https://github.com/giogix2/3D-Bear-Cartoon/blob/master/Images/Screen6.jpg)
+
+In this way, the project, when it tries to compile, it should look for the folder glm and SDL, present in the project folder.
+
+In the field **library directories**, in the project properties (as shown in figure 4), I put the following:
+* **$(ProjectDir)\SDL\lib\x86**
+
+As shown in figure 5, I set the field **C/C++ -> General**, in the project’s properties, writing the following:
+* **$(ProjectDir)\glew-1.12.0\include**
+![Alt text](https://github.com/giogix2/3D-Bear-Cartoon/blob/master/Images/Screen7.jpg)
+
+In this way, Visual Studio, should looks for the glew library directly inside of the project folder.
+
+The same thing as before has been done for the field **Linker -> General**, as shown in figure 6.
+![Alt text](https://github.com/giogix2/3D-Bear-Cartoon/blob/master/Images/Screen8.jpg)
+
+I’ve put just the files main.cpp, Shapes.h and Shapes.cpp in the file zip. I’m not familiar with Visual Studio so I don’t know if the project .sln would be useful. I’m going to put a separate folder with also the project in case is necessary.
+
+### Various Info
+
+**Projection techniques**
+
+I’ve used the function gluLookAt() to change the positon of the camera, when using the ModelView matrix. In particular I’ve made possible to change the camera position interactively from the keyboard. As with the camera rotation (implemented in the first homework), I’ve created 3 global variables (translationX, translationY and translationZ), that are also the first 3 argument of the function gluLookAt(), that is the arguments that specify the position of the camera. To modify these values through the keyboard I’ve updated the function handleKeyPress() (present also in the previous homework). In particular I’ve created the function moveCamera(), which takes 4 argument, such the increment of the x,y,z coordinates of the camera and the angle view used in the gluPerspective() function, explained later. The function moveCamera() is then called by the function handleKeyPress(), with the appropriate arguments, depending on the key pressed. As just said, I’ve also used the function gluPerspective(), with the GL_PROJECTION matrix, to modify the view angle of the camera, also pressing the right button, as before with the function handleKeyPress(). The matrix mode (from ModelView to GL_PROJECTION) is made in the beginning of the function drawScene(), with the function glMatrixMode(), and immediately after gluPerspective() is called.
+
+**Hidden surface removal**
+
+I’ve used the function glEnable(GL_CULL_FACE), before the drawing of the cubes and the roof, to enable the culling of one of the surfaces of the triangles. After this, I’ve used the function glCullFace(GL_BACK) which removes the back surface of the triangles. After the drawing of these 3D objects, I’ve disabled the hiding of the surfaces, with the function glDisable(GL_CULL_FACE). In this case the back surfaces were the internal one, that is the surfaces not seen from outside. So the removing of these sides, it actually doesn’t affect the view of the scene.
+
+**Transformations**
+
+I’ve used the function glRotate() to make the entire scene rotating (pressing the key “a”, as explained in the previous homework). I’ve used the function glRotate() also to rotate the second tube, with the following parameters (-30.0f, 0.0f, 0.0f). I’ve used the function glTranslate() to put all the 3D object in the correct position. In particular I put all the objects to the right, to don’t overlap the previous scene (the objects of the previous homework). Then I chose the position of the objects accordingly to the snapshot of the snowboard cartoon, in the homework assignment.
+
+**Multi-light source**
+
+In the previous homework I had already experimented the presence of different kinds of light sources. In particular I had an ambient light source, with the color specified by the following values 0.4f, 0.4f, 0.4f. I had also 2 diffuse light source in position 4.0f, 0.0f, 8.0f and -1.0f, 0.5f, 0.5f and the following colors 0.5f, 0.5f, 0.5f and 0.5f, 0.2f, 0.2f.
+To try also the specular light source, I’ve put a source in position -1.0f, 10.0f, 0.5f with color 1.0f, 1.0f 1.0f, with the function glLigthfv().
+
+**Different materials for multiple objects**
+
+The materials for the objects are imported by the parser explained above, contained in the .mtl files, made with Blender.
+All the information regarding the materials are saved in the Triangle objects. When the functions draw(), of the objects Triangle is called, if present, also the material is attached. In particular the function draw() calls the functions glMaterialfv() with the following parameters, GL_DIFFUSE, GL_AMBIENT, GL_SPECULAR, GL_SHININES, depending of the information represented.
 
